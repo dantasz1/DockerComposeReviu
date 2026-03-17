@@ -1,0 +1,263 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock title %}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Poppins:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'src/output.css' %}">
+    <style>
+        /* Evita animação inicial do background do nav até ser posicionado */
+        #nav-bg.no-transition { transition: none !important; }
+    </style>
+
+</head>
+<body>
+    <div class="h-screen flex">
+        {% if page == "auth" %}
+        {% else %}
+            <nav id="main-nav" class="absolute flex justify-between px-16 pb-4 w-full bottom-0 bg-[#003554] z-10
+            md:static md:left-0 md:bottom-auto md:flex-col md:pr-4 md:pl-2 md:py-16 md:w-fit md:justify-start md:gap-5">
+                <img id="nav-bg" class="absolute -top-[33.5px] w-28 pointer-events-none transition-all duration-300 ease-in-out no-transition z-10
+                md:rotate-90 md:left-4.75" src="{% static 'resouces/nav-button-bg.svg' %}" alt="">
+
+                <a href="{% url 'home' %}" class="nav-btn size-14 p-3 rounded-full transition-transform duration-300 ease-in-out z-30 {% if request.path == '/' %} -translate-y-[29px] md:translate-y-0 md:translate-x-11 {% endif %}" role="button" aria-current="page">
+                    <img src="{% static 'resouces/home.svg' %}" alt="Home">
+                </a>
+                <a href="{% url 'decks' %}" class="nav-btn size-14 p-3 rounded-full transition-transform duration-300 ease-in-out z-30 {% if request.path == '/decks/' %} -translate-y-[29px] md:translate-y-0 md:translate-x-11 {% endif %}" role="button">
+                    <img src="{% static 'resouces/cards.svg' %}" alt="Cards">
+                </a>
+                <a href="#" id="btn-logout" data-logout-url="{% url 'logout' %}" class="nav-btn size-14 p-3 rounded-full transition-transform duration-300 ease-in-out z-30 {% if request.path == '' %} -translate-y-[29px] md:translate-y-0 md:translate-x-11 {% endif %}" role="button">
+                    <img src="{% static 'resouces/logout.svg' %}" alt="User">
+                </a>
+            </nav>
+        {% endif %}
+        <div class="grow overflow-scroll scrollbar-hidden">
+        {% block body %}
+        {% endblock body %}
+        </div>    
+    </div>
+
+    {% block extra_body %}
+    {% endblock extra_body %}
+
+    <!-- Modal Confirmar Logout -->
+    <div id="modal-logout" class="hidden">
+        <div class="fixed inset-0 bg-[#00000046] z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl">
+                <h2 class="text-[#003554] text-2xl font-bold mb-4">Logout</h2>
+                <p class="text-gray-700 mb-6">Tem certeza que deseja sair da sua conta?</p>
+                <div class="flex gap-3">
+                    <button type="button" id="btn-cancel-logout" class="flex-1 px-6 py-3 rounded-full border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition-colors">Cancelar</button>
+                    <form method="post" action="{% url 'logout' %}" class="flex-1">
+                        {% csrf_token %}
+                        <button type="submit" id="btn-confirm-logout" class="w-full px-6 py-3 rounded-full bg-[#003554] hover:bg-[#004565] text-white font-semibold transition-colors">Sair</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if page == "auth" %}
+    {% else %}
+        <script>
+            (function(){
+                const nav = document.getElementById('main-nav');
+                if (!nav) return;
+                const bg = document.getElementById('nav-bg');
+                // Garantir que a transição esteja desativada até o posicionamento inicial
+                if (bg && !bg.classList.contains('no-transition')) bg.classList.add('no-transition');
+                const buttons = Array.from(nav.querySelectorAll('.nav-btn'));
+                const currentPath = "{{ request.path }}";
+
+                // media query para md (>= 48rem / 768px)
+                const mql = window.matchMedia('(min-width: 48rem)');
+
+                function moveBgTo(btn) {
+                    const navRect = nav.getBoundingClientRect();
+                    const btnRect = btn.getBoundingClientRect();
+
+                    if (mql.matches) {
+                        const top = btnRect.top - navRect.top + (btnRect.height / 2) - (bg.offsetHeight / 2);
+                        bg.style.top = Math.max(-9999, top) + 'px';
+                        bg.style.left = '';
+                    } else {
+                        const left = btnRect.left - navRect.left + (btnRect.width / 2) - (bg.offsetWidth / 2);
+                        bg.style.left = Math.max(0, left) + 'px';
+                        bg.style.top = '';
+                    }
+
+                    buttons.forEach(b => {
+                        b.classList.remove('-translate-y-[29px]');
+                        b.classList.remove('md:translate-x-11');
+                    });
+
+                    if (mql.matches) {
+                        btn.classList.add('md:translate-x-11');
+                    } else {
+                        btn.classList.add('-translate-y-[29px]');
+                    }
+                }
+
+                function saveActive(href){
+                    try { localStorage.setItem('reviu.navActive', href); } catch (e) { }
+                }
+
+                // Adicionar listeners
+                buttons.forEach(btn => {
+                    btn.addEventListener('click', function(e){
+                        const isAnchor = btn.tagName === 'A';
+                        const href = isAnchor ? btn.getAttribute('href') : null;
+
+                        const shouldPrevent = href === '#' || href === '' || href === null;
+
+                        if (shouldPrevent) {
+                            if (e && typeof e.preventDefault === 'function') e.preventDefault();
+                            moveBgTo(btn);
+                            saveActive(href);
+                            return;
+                        }
+
+                        if (e && typeof e.preventDefault === 'function') e.preventDefault();
+                        moveBgTo(btn);
+                        if (href) saveActive(href);
+
+                        let navigated = false;
+                        function navigate() {
+                            if (navigated) return;
+                            navigated = true;
+                            window.location.href = href;
+                        }
+
+                        function onTransitionEnd(ev) {
+                            if (ev.target === bg) {
+                                cleanup();
+                                navigate();
+                            }
+                        }
+
+                        function cleanup() {
+                            bg.removeEventListener('transitionend', onTransitionEnd);
+                            clearTimeout(timeoutId);
+                        }
+
+                        bg.addEventListener('transitionend', onTransitionEnd);
+                        const timeoutId = setTimeout(() => { cleanup(); navigate(); }, 600);
+                    });
+
+                    btn.addEventListener('keydown', function(e){
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+                        }
+                    });
+                });
+
+                // Reposicionar ao redimensionar e quando a media query mudar
+                function repositionActive() {
+                    const stored = (function(){ try { return localStorage.getItem('reviu.navActive'); } catch (e) { return null; } })();
+                    let activeBtn = null;
+
+                    // Prefer the actual current path so the selected button matches the page URL
+                    activeBtn = buttons.find(b => b.tagName === 'A' && b.getAttribute('href') === currentPath);
+
+                    // Fallback to previously stored active button if current path didn't match
+                    if (!activeBtn && stored) {
+                        activeBtn = buttons.find(b => b.tagName === 'A' && b.getAttribute('href') === stored);
+                    }
+
+                    // Ultimate fallback: first button
+                    if (!activeBtn) activeBtn = buttons[0];
+
+                    // Keep localStorage in sync with the active button
+                    try {
+                        const href = activeBtn && activeBtn.tagName === 'A' ? activeBtn.getAttribute('href') : null;
+                        if (href) localStorage.setItem('reviu.navActive', href);
+                    } catch (e) {}
+
+                    if (activeBtn) moveBgTo(activeBtn);
+                }
+
+                window.addEventListener('resize', repositionActive);
+                if (typeof mql.addEventListener === 'function') {
+                    mql.addEventListener('change', repositionActive);
+                } else if (typeof mql.addListener === 'function') {
+                    mql.addListener(repositionActive);
+                }
+
+                // Reposiciona imediatamente (sem animação) para evitar movimento visível
+                repositionActive();
+                // Reativar transições no próximo frame para permitir animações posteriores
+                requestAnimationFrame(function(){ if (bg) bg.classList.remove('no-transition'); });
+
+                // Também reposicionar após o load como fallback
+                window.addEventListener('load', function(){
+                    repositionActive();
+                });
+
+                // Logout modal handling
+                const modalLogout = document.getElementById('modal-logout');
+                const btnLogout = document.getElementById('btn-logout');
+                const btnCancelLogout = document.getElementById('btn-cancel-logout');
+                let _prevActiveNavHref = null;
+
+                // Capture the previously active nav item before any click handlers change it
+                if (btnLogout) {
+                    // pointerdown happens before click and before other click handlers, so store prior state
+                    btnLogout.addEventListener('pointerdown', function() {
+                        try { _prevActiveNavHref = localStorage.getItem('reviu.navActive'); } catch (e) { _prevActiveNavHref = null; }
+                    });
+
+                    btnLogout.addEventListener('click', function(e){
+                        if (e && typeof e.preventDefault === 'function') e.preventDefault();
+                        if (modalLogout) modalLogout.classList.remove('hidden');
+                    });
+                }
+
+                function _restorePrevNav() {
+                    try {
+                        const targetHref = _prevActiveNavHref;
+                        let restoreBtn = null;
+                        if (targetHref) {
+                            restoreBtn = buttons.find(b => b.tagName === 'A' && b.getAttribute('href') === targetHref);
+                        }
+                        if (!restoreBtn) restoreBtn = buttons[0];
+                        if (restoreBtn) moveBgTo(restoreBtn);
+                        try { if (targetHref) localStorage.setItem('reviu.navActive', targetHref); } catch (e) {}
+                    } finally {
+                        _prevActiveNavHref = null;
+                    }
+                }
+
+                if (btnCancelLogout && modalLogout) {
+                    btnCancelLogout.addEventListener('click', function(){
+                        if (modalLogout) modalLogout.classList.add('hidden');
+                        _restorePrevNav();
+                    });
+                }
+
+                if (modalLogout) {
+                    modalLogout.addEventListener('click', function(e){
+                        if (e.target === modalLogout) {
+                            modalLogout.classList.add('hidden');
+                            _restorePrevNav();
+                        }
+                    });
+
+                    document.addEventListener('keydown', function(e) {
+                        if (e.key === 'Escape' && !modalLogout.classList.contains('hidden')) {
+                            modalLogout.classList.add('hidden');
+                            _restorePrevNav();
+                        }
+                    });
+                }
+            })();
+        </script>
+    {% endif %}
+</body>
+</html>

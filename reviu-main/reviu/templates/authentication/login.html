@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Reviu - Login{% endblock %}
+
+{% block body %}
+  <section class="min-h-screen flex items-center justify-center bg-[#013756]">
+        <main class="w-full max-w-md">
+            {% if error %}
+                <div id="flash-error" class="fixed top-4 left-1/2 -translate-x-1/2 -translate-y-6 w-full max-w-md p-4 bg-red-100 text-red-700 text-center rounded-full z-50 opacity-0 transition-all duration-500">{{ error }}</div>
+            {% endif %}
+            <div class="relative flex flex-col justify-center -mt-8">
+                <div class="h-60 w-full"></div>
+
+                <img src="{% static 'resouces/decko-corpo.svg' %}" alt="" class="absolute left-1/2 -translate-x-1/2 top-15 z-0 pointer-events-none">
+
+                <div class="relative z-10 w-full bg-linear-to-b from-[#045685] to-[#003554] rounded-2xl overflow-hidden">
+                    <div class="p-6 pb-8">
+                    <h1 class="text-3xl font-extrabold text-white text-center mt-4">Bem-vindo de volta!</h1>
+                    <form method="post" action="" class="mt-6 space-y-4">{% csrf_token %}
+                        
+                        <div>
+                            <label class="text-[#DBDBDB] text-sm">Email</label>
+                            <div class="mt-2 relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#DBDBDB]">
+                                    <img src="{% static 'resouces/email-ico.svg' %}" class="w-5 h-5" alt="">
+                                </span>
+                                <input name="email" type="email" required class="w-full pl-12 pr-4 py-3 rounded-full bg-[#D9D9D950] placeholder-[#A4A4A4] text-[#DBDBDB] focus:outline-none focus:ring-2 focus:ring-[#FE9A09]" placeholder="exemplo@gmail.com">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-[#DBDBDB] text-sm">Senha</label>
+                            <div class="mt-2 relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#DBDBDB]">
+                                    <img src="{% static 'resouces/key-ico.svg' %}" class="w-5 h-5" alt="">
+                                </span>
+                                <input name="password" type="password" required class="w-full pl-12 pr-4 py-3 rounded-full bg-[#D9D9D950] placeholder-[#A4A4A4] text-[#DBDBDB] focus:outline-none focus:ring-2 focus:ring-[#FE9A09]" placeholder="••••••••">
+                            </div>
+                        </div>
+
+                        <div>
+                            <button type="submit" class="w-full mt-4.5 py-3 rounded-full bg-[#FE9A09] text-[#12130F] font-semibold shadow-md hover:brightness-95">Entrar</button>
+                        </div>
+                    </form>
+                    <div class="flex justify-center mt-3 ">
+                      <p class="text-[#DBDBDB] text-lg">ainda não tem conta? <span class="text-[#FE9A09] text-lg"><a href="{% url 'register' %}">registre-se aqui</a></span></p>
+                    </div>
+                    </div>
+                </div>
+
+                <img src="{% static 'resouces/decko-maos.svg' %}" alt="" class="absolute left-1/2 -translate-x-1/2 translate-y-46.75 top-0 z-20 pointer-events-none">
+            </div>
+        </main>
+    </section>
+{% endblock %}
+{% block extra_body %}
+    <script>
+        // Show flash error from top, keep 5s, then fade out
+        document.addEventListener('DOMContentLoaded', function(){
+            const el = document.getElementById('flash-error');
+            if (!el) return;
+
+            // allow initial render, then slide/fade in
+            requestAnimationFrame(() => {
+                // remove upward translate and make fully opaque
+                el.classList.remove('-translate-y-6');
+                el.classList.add('translate-y-0', 'opacity-100');
+            });
+
+            // after 5s, hide again with reverse animation and remove from DOM after transition
+            const visibleMs = 5000;
+            setTimeout(() => {
+                el.classList.remove('translate-y-0', 'opacity-100');
+                el.classList.add('-translate-y-6', 'opacity-0');
+                // remove after transition (duration-500 -> 500ms)
+                setTimeout(() => { try { el.remove(); } catch(e){} }, 600);
+            }, visibleMs + 200); // small offset to ensure entrance finished
+        });
+    </script>
+{% endblock extra_body %}
